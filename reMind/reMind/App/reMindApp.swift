@@ -9,10 +9,40 @@ import SwiftUI
 
 @main
 struct reMindApp: App {
+    @Environment (\.scenePhase) var scenePhase
+    @StateObject var router = reAppRouter(navigationPath: .init())
+    
     var body: some Scene {
         WindowGroup {
-            NavigationStack {
-                BoxesView(viewModel: BoxViewModel())
+            NavigationStack(path: $router.navigationPath){
+                BoxesView()
+                    .navigationDestination(for: reAppDestination.self){ destination in
+                        switch destination{
+                            case .Boxes:
+                                BoxesView()
+                            case .Box(let termViewModel, let boxViewModel):
+                                BoxView()
+                                .environmentObject(termViewModel)
+                                .environmentObject(boxViewModel)
+                            
+                            case .Swipper(let swipeReview):
+                                SwipperView(review: swipeReview)
+                                .navigationBarBackButtonHidden(true)
+                            
+                            case .SwipperReport(report: let report, termsToReview: let terms):
+                                SwipperReportView(report: report, termsToReview: terms)
+                                .navigationBarBackButtonHidden(true)
+                        }
+                    }
+            }
+            .environmentObject(router)
+        }
+        .onChange(of: scenePhase){ phase in
+            switch(phase){
+            case .active:
+                break
+            default:
+                CoreDataStack.shared.saveContext()
             }
         }
     }
