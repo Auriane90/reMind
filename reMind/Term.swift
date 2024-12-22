@@ -30,6 +30,10 @@ extension Term {
 
 }
 
+extension Term: Identifiable{
+    
+}
+
 extension Term: CoreDataModel {
     var srs: SpacedRepetitionSystem {
         return SpacedRepetitionSystem(rawValue: Int(rawSRS)) ?? SpacedRepetitionSystem.first
@@ -40,7 +44,18 @@ extension Term: CoreDataModel {
     }
 }
 
-enum SpacedRepetitionSystem: Int {
+extension Term{
+    override public func awakeFromInsert() {
+        super.awakeFromInsert()
+        let date = Date()
+        self.creationDate = date
+        self.lastReview = date
+        self.rawSRS = Int16(SpacedRepetitionSystem.none.rawValue)
+        self.identifier = UUID()
+    }
+}
+
+enum SpacedRepetitionSystem: Int, CaseIterable{
     case none = 0
     case first = 1
     case second = 2
@@ -49,4 +64,22 @@ enum SpacedRepetitionSystem: Int {
     case fifth = 8
     case sixth = 13
     case seventh = 21
+    
+    func next() -> Self{
+        let all = Self.allCases
+        let idx = all.firstIndex(of: self)!
+        let next = all.index(after: idx)
+        return next == all.endIndex ? self : all[next]
+    }
+    
+    func before() -> Self{
+        if self == .none{
+            return .first
+        }
+        
+        let all = Self.allCases
+        let idx = all.firstIndex(of: self)!
+        let before = all.index(before: idx)
+        return before == all.startIndex ? self : all[before]
+    }
 }
